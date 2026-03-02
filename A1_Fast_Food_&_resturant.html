@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>A1 Fast Food & Restaurant PRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body{font-family:Arial;background:#111;color:#fff;margin:0}
+header{background:#ff9800;padding:15px;text-align:center;font-size:20px;font-weight:bold}
+button{background:#ff9800;border:none;padding:8px 12px;margin:5px;border-radius:8px}
+input,select{padding:6px;margin:5px;border-radius:6px;border:none}
+.container{padding:15px}
+.card{background:#222;padding:10px;margin:8px;border-radius:10px}
+.low{color:red;font-weight:bold}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>A1 Fast Food & Restaurant 👑 PRO</header>
+
+<div class="container">
+
+<!-- Splash -->
+<div id="splash">
+<h3>FSSAI Registration</h3>
+<p>FBO: Ankit Chauhan</p>
+<p>Reg No: 22726266000033</p>
+<p>Valid Till: 05-02-2027</p>
+<button onclick="enterApp()">Enter App</button>
+</div>
+
+<!-- Login -->
+<div id="login" class="hidden">
+<select id="role">
+<option value="customer">Customer</option>
+<option value="staff">Staff</option>
+<option value="owner">Owner</option>
+</select>
+<input type="password" id="pass" placeholder="Owner:1234 Staff:1111">
+<button onclick="login()">Login</button>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden">
+
+<h3>Select Category</h3>
+<select onchange="filterCategory(this.value)">
+<option value="All">All</option>
+<option value="Fast Food">Fast Food</option>
+<option value="Egg">Egg</option>
+<option value="Beverage">Beverage</option>
+</select>
+
+<h3>Menu</h3>
+<div id="menu"></div>
+
+<h3>Cart</h3>
+<div id="cart"></div>
+<p>Total: ₹<span id="total">0</span></p>
+<p>Bonus: ₹<span id="bonus">0</span></p>
+
+<button onclick="useBonus()">Use Bonus</button>
+<button onclick="placeOrder()">Place Order</button>
+
+<div id="codeSection" class="hidden">
+<input id="userCode" placeholder="Enter Payment Code">
+<button onclick="verifyCode()">Confirm Payment</button>
+</div>
+
+<div id="ownerPanel" class="hidden">
+<h3>Owner Panel</h3>
+<button onclick="generateCode()">Generate Code</button>
+<p>Current Code: <span id="currentCode"></span></p>
+<h4>Daily Sale: ₹<span id="dailySale">0</span></h4>
+<h4>Top Item: <span id="topItem">None</span></h4>
+<button onclick="resetDay()">Reset Day</button>
+</div>
+
+</div>
+</div>
+
+<script>
+let role="";
+let menuData=[
+{name:"Egg Roll",price:40,stock:20,cat:"Egg",sold:0},
+{name:"Chowmein",price:50,stock:15,cat:"Fast Food",sold:0},
+{name:"Burger",price:60,stock:25,cat:"Fast Food",sold:0},
+{name:"Biryani",price:120,stock:10,cat:"Fast Food",sold:0},
+{name:"Momos",price:70,stock:20,cat:"Fast Food",sold:0},
+{name:"Cold Drink",price:30,stock:30,cat:"Beverage",sold:0}
+];
+
+let cart=[];
+let total=0;
+let billNo=localStorage.getItem("billNo")||1;
+let bonus=parseInt(localStorage.getItem("bonus")||0);
+let dailySale=parseInt(localStorage.getItem("dailySale")||0);
+let paymentCode="";
+
+document.getElementById("bonus").innerText=bonus;
+document.getElementById("dailySale").innerText=dailySale;
+
+function enterApp(){
+splash.classList.add("hidden");
+login.classList.remove("hidden");
+}
+
+function login(){
+role=role.value;
+let pass=document.getElementById("pass").value;
+if(role==="owner" && pass!=="1234"){alert("Wrong Password");return;}
+if(role==="staff" && pass!=="1111"){alert("Wrong Password");return;}
+login.classList.add("hidden");
+app.classList.remove("hidden");
+if(role==="owner"){ownerPanel.classList.remove("hidden");}
+loadMenu("All");
+}
+
+function loadMenu(cat){
+menu.innerHTML="";
+menuData.forEach((item,i)=>{
+if(item.stock>0 && (cat==="All"||item.cat===cat)){
+menu.innerHTML+=`
+<div class="card">
+${item.name} - ₹${item.price}
+${item.stock<5?'<span class="low"> Low</span>':''}
+<br><button onclick="addToCart(${i})">Add</button>
+</div>`;
+}
+});
+updateTopItem();
+}
+
+function filterCategory(cat){loadMenu(cat);}
+
+function addToCart(i){
+cart.push(menuData[i]);
+total+=menuData[i].price;
+menuData[i].stock--;
+menuData[i].sold++;
+document.getElementById("total").innerText=total;
+loadMenu("All");
+}
+
+function useBonus(){
+if(bonus>0){
+let used=Math.min(bonus,total);
+total-=used;
+bonus-=used;
+localStorage.setItem("bonus",bonus);
+document.getElementById("bonus").innerText=bonus;
+document.getElementById("total").innerText=total;
+alert("Bonus Used ₹"+used);
+}
+}
+
+function placeOrder(){
+if(total<=0){alert("Cart Empty");return;}
+codeSection.classList.remove("hidden");
+alert("Pay ₹"+total+" at Counter");
+}
+
+function generateCode(){
+paymentCode=Math.floor(1000+Math.random()*9000);
+currentCode.innerText=paymentCode;
+}
+
+function verifyCode(){
+if(userCode.value==paymentCode){
+alert("Payment Confirmed");
+addBonus();
+generateBill();
+}
+else{alert("Wrong Code");}
+}
+
+function addBonus(){
+let add=Math.floor(total/100)*5;
+bonus+=add;
+dailySale+=total;
+localStorage.setItem("bonus",bonus);
+localStorage.setItem("dailySale",dailySale);
+document.getElementById("bonus").innerText=bonus;
+document.getElementById("dailySale").innerText=dailySale;
+}
+
+function updateTopItem(){
+let top=menuData.reduce((a,b)=>a.sold>b.sold?a:b);
+document.getElementById("topItem").innerText=top.sold>0?top.name:"None";
+}
+
+function resetDay(){
+dailySale=0;
+menuData.forEach(item=>item.sold=0);
+localStorage.setItem("dailySale",0);
+document.getElementById("dailySale").innerText=0;
+updateTopItem();
+alert("Day Reset");
+}
+
+function generateBill(){
+const {jsPDF}=window.jspdf;
+let doc=new jsPDF();
+doc.text("A1 Fast Food & Restaurant",20,20);
+doc.text("Bill No: "+billNo,20,30);
+doc.text("Total Paid: ₹"+total,20,40);
+doc.save("Bill_"+billNo+".pdf");
+billNo++;
+localStorage.setItem("billNo",billNo);
+cart=[];
+total=0;
+document.getElementById("total").innerText=0;
+codeSection.classList.add("hidden");
+}
+</script>
+
+</body>
+</html>
