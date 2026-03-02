@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1 Fast Food & Restaurant</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#121212; color:#fff;}
+header { background:#ff3e00; padding:15px; text-align:center; font-size:24px; font-weight:bold;}
+button { padding:10px 15px; margin:5px; border:none; border-radius:5px; cursor:pointer;}
+.menu-item { border-bottom:1px solid #444; padding:10px 0;}
+input, select { padding:8px; margin:5px; border-radius:5px; border:none;}
+.hidden { display:none; }
+.price { color:#00ff00; font-weight:bold; margin-left:10px;}
+</style>
+</head>
+<body>
+
+<header>A1 Fast Food & Restaurant</header>
+
+<!-- Splash / License -->
+<div id="splash">
+<h2>FSSAI License</h2>
+<p>Registration No: 22726266000033</p>
+<p>Food Business Operator: Ankit Chauhan</p>
+<p>Valid Upto: 05-02-2027</p>
+<button onclick="showLogin()">Enter App</button>
+</div>
+
+<!-- Login -->
+<div id="login" class="hidden">
+<h3>Login</h3>
+<select id="loginType">
+<option value="customer">Customer</option>
+<option value="staff">Staff</option>
+<option value="admin">Owner</option>
+</select>
+<input type="password" id="password" placeholder="Enter Password">
+<button onclick="login()">Login</button>
+</div>
+
+<!-- Menu / Order -->
+<div id="menu" class="hidden">
+<h3>Menu</h3>
+<div id="items"></div>
+<hr>
+<h4>Customer Name: <input type="text" id="custName"></h4>
+<h4>Total: ₹<span id="total">0</span></h4>
+<button onclick="generateBill()">Generate Bill (PDF)</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const menuItems = [
+{name:"Egg", price:30, category:"Egg Items", stock:50},
+{name:"Chowmein", price:50, category:"Fast Food", stock:40},
+{name:"Burger", price:80, category:"Fast Food", stock:30},
+{name:"Biryani", price:120, category:"Fast Food", stock:20},
+{name:"Paneer Rice", price:110, category:"Fast Food", stock:25},
+{name:"Egg Roll", price:40, category:"Fast Food", stock:30},
+{name:"Spring Roll", price:60, category:"Fast Food", stock:15},
+{name:"Manchurian", price:70, category:"Fast Food", stock:20},
+{name:"Chips", price:20, category:"Fast Food", stock:50},
+{name:"Cold Water", price:10, category:"Beverages", stock:100},
+{name:"Sprite", price:20, category:"Beverages", stock:50},
+{name:"Thumbs Up", price:20, category:"Beverages", stock:50}
+];
+
+let cart = [];
+let userType = "";
+let total = 0;
+
+function showLogin(){
+document.getElementById("splash").classList.add("hidden");
+document.getElementById("login").classList.remove("hidden");
+}
+
+function login(){
+userType = document.getElementById("loginType").value;
+let pass = document.getElementById("password").value;
+if(userType==="staff" && pass==="1111" || userType==="admin" && pass==="1234" || userType==="customer"){
+document.getElementById("login").classList.add("hidden");
+document.getElementById("menu").classList.remove("hidden");
+displayMenu();
+}else{
+alert("Wrong password!");
+}
+}
+
+function displayMenu(){
+let container = document.getElementById("items");
+container.innerHTML="";
+menuItems.forEach((item,i)=>{
+if(item.stock>0){
+let div = document.createElement("div");
+div.className="menu-item";
+div.innerHTML=`${item.name} <span class="price">₹${item.price}</span> (Stock: ${item.stock})`;
+let btn = document.createElement("button");
+btn.innerText="Add";
+btn.onclick=()=>addToCart(i);
+div.appendChild(btn);
+container.appendChild(div);
+}
+});
+}
+
+function addToCart(index){
+let item = menuItems[index];
+cart.push(item);
+total += item.price;
+item.stock--;
+document.getElementById("total").innerText = total;
+displayMenu();
+}
+
+function generateBill(){
+if(cart.length===0){alert("Add items first!"); return;}
+let cust = document.getElementById("custName").value || "Guest";
+const { jsPDF } = window.jspdf;
+let doc = new jsPDF();
+doc.setFontSize(16);
+doc.text("A1 Fast Food & Restaurant",20,20);
+doc.text(`Customer: ${cust}`,20,30);
+doc.text(`Date: ${new Date().toLocaleString()}`,20,40);
+let y=50;
+cart.forEach(i=>{doc.text(`${i.name} - ₹${i.price}`,20,y); y+=10;});
+doc.text(`Total: ₹${total}`,20,y+10);
+doc.save("Bill.pdf");
+cart=[]; total=0;
+document.getElementById("total").innerText=0;
+displayMenu();
+alert("Bill Generated!");
+}
+</script>
+
+</body>
+</html>
